@@ -1,5 +1,12 @@
 #/bin/sh
 
+inst="$(basename "$(test -L "$0" && readlink "$0" || echo "$0")")"
+trap '{ echo -e "\e[90m$(date '+%H:%M:%S')\e[91m client received interrupt: session closed\e[39m" > $output ; \
+      kill $(ps u|grep "nc -l -p $port"|head -n1|awk -v n=2 '"'"'{print $n}'"'"') ; \
+      echo "Server-Instance $inst exited by interrupt" ; \
+      exit 0 ; \
+      }' INT
+
 host_name=host
 client_name=client
 
@@ -27,8 +34,8 @@ move_cursor_up() {
 
 server() {
   echo -e "\e[90m$(date '+%H:%M:%S')\e[32m Starting on port\e[39m $port"
-  tail -f $output | nc -l -p $port > $input
-  echo -e "\e[90m$(date '+%H:%M:%S')\e[91m server ending\e[39m"
+  tail -f $output | nc -l -p $port >$input
+  echo -e "\e[90m$(date '+%H:%M:%S')\e[91m server ending\e[39m\n"
 }
 
 receive() {
@@ -44,7 +51,7 @@ receive() {
     echo -ne "\e[90m$(date '+%H:%M:%S') " > $output
     printf '\033[0;94m%s: \033[0;39m%s\n%s: ' "$client_name" "$message" "$client_name" > $output
   done < $input
-  echo -e "\e[90m$(date '+%H:%M:%S')\e[91m receive ending\e[39m"
+  echo -e "\e[90m$(date '+%H:%M:%S')\e[91m client received interrupt: session closed\e[39m"
 }
 
 chat() {
